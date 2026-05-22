@@ -7,24 +7,17 @@ class Database {
     private $conn;
 
     public function getConnection() {
-        $this->conn = null;
+        mysqli_report(MYSQLI_REPORT_OFF);
+        $this->conn = mysqli_connect($this->host, $this->username, $this->password, $this->db_name);
 
-        try {
-            $this->conn = new PDO(
-                "mysql:host=" . $this->host . ";dbname=" . $this->db_name,
-                $this->username,
-                $this->password
-            );
-            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-        } catch(PDOException $e) {
-            if ($e->getCode() == 1049) {
+        if (!$this->conn) {
+            if (mysqli_connect_errno() === 1049) {
                 $this->initDatabase();
                 return $this->getConnection();
             }
             echo json_encode([
                 'success' => false,
-                'message' => 'Database connection failed: ' . $e->getMessage()
+                'message' => 'Database connection failed: ' . mysqli_connect_error()
             ]);
             exit();
         }
@@ -33,29 +26,27 @@ class Database {
     }
 
     private function initDatabase() {
-        try {
-            $conn = new PDO(
-                "mysql:host=" . $this->host,
-                $this->username,
-                $this->password
-            );
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $conn->exec("CREATE DATABASE IF NOT EXISTS `" . $this->db_name . "`");
-            $conn->exec("USE `" . $this->db_name . "`");
-            $conn->exec("CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(50) NOT NULL UNIQUE,
-                email VARCHAR(100) NOT NULL UNIQUE,
-                password VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )");
-        } catch(PDOException $e) {
+        mysqli_report(MYSQLI_REPORT_OFF);
+        $conn = mysqli_connect($this->host, $this->username, $this->password);
+
+        if (!$conn) {
             echo json_encode([
                 'success' => false,
-                'message' => 'Database initialization failed: ' . $e->getMessage()
+                'message' => 'Database initialization failed: ' . mysqli_connect_error()
             ]);
             exit();
         }
+
+        mysqli_query($conn, "CREATE DATABASE IF NOT EXISTS `" . $this->db_name . "`");
+        mysqli_select_db($conn, $this->db_name);
+        mysqli_query($conn, "CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) NOT NULL,
+            email VARCHAR(100) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+        mysqli_close($conn);
     }
 }
 ?>

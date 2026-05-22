@@ -48,7 +48,7 @@ try {
 
         echo json_encode([
             'success' => true,
-            'username' => isset($profile['user_name']) ? (string) $profile['user_name'] : '',
+            'name' => isset($profile['user_name']) ? (string) $profile['user_name'] : '',
             'email' => isset($profile['user_email']) ? (string) $profile['user_email'] : '',
             'profile' => [
                 'age' => $age,
@@ -61,7 +61,7 @@ try {
     } else {
         echo json_encode([
             'success' => true,
-            'username' => $user['username'],
+            'name' => $user['name'],
             'email' => $user['email'],
             'profile' => [
                 'age' => '',

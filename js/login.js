@@ -22,14 +22,14 @@ $(document).ready(function() {
     $('#loginForm').on('submit', function(e) {
         e.preventDefault();
         
-        const username = $('#username').val().trim();
+        const email = $('#email').val().trim();
         const password = $('#password').val();
         
         // Clear previous alerts
         $('#alertMessage').html('');
         
         // Validation
-        if (!username || !password) {
+        if (!email || !password) {
             showAlert('Please fill in all fields!', 'danger');
             return;
         }
@@ -43,7 +43,7 @@ $(document).ready(function() {
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                username: username,
+                email: email,
                 password: password
             }),
             success: function(response) {

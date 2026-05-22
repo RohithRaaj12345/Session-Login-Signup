@@ -4,7 +4,6 @@ header('Access-Control-Allow-Origin: *');
 
 require_once 'config/database.php';
 
-// Get POST data
 $data = json_decode(file_get_contents("php://input"), true);
 
 if (!$data) {
@@ -12,12 +11,11 @@ if (!$data) {
     exit();
 }
 
-$username = trim($data['username'] ?? '');
+$name = trim($data['name'] ?? '');
 $email = trim($data['email'] ?? '');
 $password = $data['password'] ?? '';
 
-// Validation
-if (empty($username) || empty($email) || empty($password)) {
+if (empty($name) || empty($email) || empty($password)) {
     echo json_encode(['success' => false, 'message' => 'All fields are required']);
     exit();
 }
@@ -32,35 +30,27 @@ if (strlen($password) < 6) {
     exit();
 }
 
-// Hash password
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-// Database connection
 $database = new Database();
 $conn = $database->getConnection();
 
-try {
-    // Prepared statement to insert user
-    $query = "INSERT INTO users (username, email, password) VALUES (:username, :email, :password)";
-    $stmt = $conn->prepare($query);
-    
-    $stmt->bindParam(':username', $username);
-    $stmt->bindParam(':email', $email);
-    $stmt->bindParam(':password', $hashed_password);
-    
-    if ($stmt->execute()) {
-        echo json_encode([
-            'success' => true,
-            'message' => 'Registration successful! Please login.'
-        ]);
+$stmt = mysqli_prepare($conn, "INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
+mysqli_stmt_bind_param($stmt, "sss", $name, $email, $hashed_password);
+
+if (mysqli_stmt_execute($stmt)) {
+    echo json_encode([
+        'success' => true,
+        'message' => 'Registration successful! Please login.'
+    ]);
+} else {
+    if (mysqli_errno($conn) == 1062) {
+        echo json_encode(['success' => false, 'message' => 'Email already exists']);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Registration failed']);
-    }
-} catch (PDOException $e) {
-    if ($e->getCode() == 23000) {
-        echo json_encode(['success' => false, 'message' => 'Username or email already exists']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'Error: ' . mysqli_error($conn)]);
     }
 }
+
+mysqli_stmt_close($stmt);
+mysqli_close($conn);
 ?>

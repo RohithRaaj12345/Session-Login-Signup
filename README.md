@@ -30,13 +30,13 @@ A user authentication system with registration, login, and profile management bu
 │   └── profile.js          # Profile load & update logic
 └── php/
     ├── signup.php          # Register user (MySQL)
-    ├── login.php           # Authenticate user (MySQL + Redis)
+    ├── login.php           # Authenticate user via email (MySQL + Redis)
     ├── get_profile.php     # Fetch profile (Redis + MongoDB)
     ├── update_profile.php  # Update profile (Redis + MongoDB)
     ├── session_login.php   # Validate session token (Redis)
     ├── session_logout.php  # Delete session token (Redis)
     └── config/
-        ├── database.php    # MySQL PDO connection
+        ├── database.php    # MySQLi connection (auto-creates DB & table)
         ├── mongodb.php     # MongoDB native driver connection
         └── redis.php       # Redis native extension connection
 ```
@@ -44,7 +44,7 @@ A user authentication system with registration, login, and profile management bu
 ## Prerequisites
 
 - PHP 8.3+ with the following extensions enabled:
-  - `pdo_mysql`
+  - `mysqli`
   - `mongodb`
   - `redis`
 - MySQL Server
@@ -59,22 +59,9 @@ A user authentication system with registration, login, and profile management bu
    git clone <repo-url>
    ```
 
-2. **Create the MySQL database**
-   ```sql
-   CREATE DATABASE guvitask;
+2. **No manual database setup needed** — the application automatically creates the MySQL database (`guvitask`) and `users` table on first connection.
 
-   USE guvitask;
-
-   CREATE TABLE users (
-       id INT AUTO_INCREMENT PRIMARY KEY,
-       username VARCHAR(50) NOT NULL UNIQUE,
-       email VARCHAR(100) NOT NULL UNIQUE,
-       password VARCHAR(255) NOT NULL,
-       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-   );
-   ```
-
-3. **Update database credentials** in `php/config/database.php` if needed (defaults to `root` with no host/port changes).
+3. **Update database credentials** in `php/config/database.php` if needed (defaults to `root`).
 
 4. **Ensure Redis is running** on `127.0.0.1:6379`.
 
@@ -87,7 +74,7 @@ A user authentication system with registration, login, and profile management bu
 | Endpoint | Method | Auth Required | Description |
 |----------|--------|---------------|-------------|
 | `php/signup.php` | POST | No | Register a new user |
-| `php/login.php` | POST | No | Login and receive session token |
+| `php/login.php` | POST | No | Login via email and receive session token |
 | `php/session_login.php` | POST | Yes | Validate session token |
 | `php/session_logout.php` | POST | Yes | Invalidate session token |
 | `php/get_profile.php` | POST | Yes | Fetch user profile from MongoDB |
@@ -95,9 +82,19 @@ A user authentication system with registration, login, and profile management bu
 
 ## Session Flow
 
-1. User logs in via jQuery AJAX → PHP verifies credentials against MySQL
-2. On success, PHP generates a random token and stores it in Redis with user data (24h expiry)
-3. Token is saved in browser `localStorage` via JavaScript
-4. Every subsequent request sends the token in the request body
-5. Backend validates the token against Redis before processing
-6. Logout deletes the token from both Redis and `localStorage`
+1. User logs in via email + password using jQuery AJAX
+2. PHP verifies credentials against MySQL (mysqli with prepared statements)
+3. On success, PHP generates a random token and stores it in Redis with user data (24h expiry)
+4. Token is saved in browser `localStorage` via JavaScript
+5. Profile page validates the token against Redis before loading
+6. Every subsequent request sends the token in the request body
+7. Backend validates the token against Redis before processing
+8. Logout deletes the token from both Redis and `localStorage`
+
+## Security
+
+- MySQL queries use prepared statements (mysqli) — no raw SQL
+- Passwords are hashed with `password_hash()` (bcrypt)
+- Login is email-based — no username exposure
+- Session tokens are random 32-byte hex strings stored in Redis with TTL
+- No PHP sessions used — session state managed via Redis + localStorage

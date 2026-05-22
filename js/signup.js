@@ -21,7 +21,7 @@ $(document).ready(function() {
     $('#signupForm').on('submit', function(e) {
         e.preventDefault();
         
-        const username = $('#username').val().trim();
+        const name = $('#name').val().trim();
         const email = $('#email').val().trim();
         const password = $('#password').val();
         const confirmPassword = $('#confirmPassword').val();
@@ -49,7 +49,7 @@ $(document).ready(function() {
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                username: username,
+                name: name,
                 email: email,
                 password: password
             }),

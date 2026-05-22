@@ -1,15 +1,32 @@
 $(document).ready(function() {
     const usertoken = localStorage.getItem('userToken');
-    
-    // Check if user is logged in
+
+    // Check if token exists
     if (!usertoken) {
         window.location.href = 'login.html';
-        // return;
+        return;
     }
-    
-    // Load profile data
-    loadProfile();
-    
+
+    // Validate token with backend before loading profile
+    $.ajax({
+        url: 'php/session_login.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ usertoken: usertoken }),
+        success: function(response) {
+            if (response.success) {
+                loadProfile();
+            } else {
+                localStorage.removeItem('userToken');
+                window.location.href = 'login.html';
+            }
+        },
+        error: function() {
+            localStorage.removeItem('userToken');
+            window.location.href = 'login.html';
+        }
+    });
+
     // Logout functionality
     $('#logoutBtn').on('click', function() {
         $.ajax({
@@ -44,10 +61,10 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     // Display account info
-                    $('#displayUsername').text(response.username);
-                    $('#username').text(response.username);
+                    $('#displayUsername').text(response.name);
+                    $('#username').text(response.name);
                     $('#email').text(response.email);
-                    $('#avatarInitial').text(response.username.charAt(0).toUpperCase());
+                    $('#avatarInitial').text(response.name.charAt(0).toUpperCase());
                     
                     // Fill profile form
                     $('#age').val(response.profile.age);
@@ -112,7 +129,8 @@ $(document).ready(function() {
             </div>
         `;
         $('#alertMessage').html(alertHtml);
-        
+        $('html, body').animate({ scrollTop: 0 }, 300);
+
         // Auto dismiss after 5 seconds
         setTimeout(function() {
             $('#alertMessage').html('');

@@ -1,36 +1,32 @@
 <?php
-    header('Content-Type: application/json');
-    header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
 
-    require_once 'config/redis.php';
+require_once 'config/redis.php';
 
-    $data = json_decode(file_get_contents("php://input"), true);
+$data = json_decode(file_get_contents("php://input"), true);
 
-    if (!$data) {
-        echo json_encode(['success' => false, 'message' => 'Invalid Session Value While Login']);
-        exit();
-    }
+if (!$data) {
+    echo json_encode(['success' => false, 'message' => 'Invalid Session Value While Login']);
+    exit();
+}
 
-    $redis_conn = new Redis_Connection();
-    $redis = $redis_conn->getClient();
+$redis_conn = new Redis_Connection();
+$redis = $redis_conn->getClient();
 
-    $usertoken = trim($data['usertoken'] ?? '');
+$usertoken = trim($data['usertoken'] ?? '');
 
-    $allKeys = $redis->keys('*'); 
+$user_data = $redis->get($usertoken);
 
-    foreach ($allKeys as $key) {
-        // $value = $redis->get($key); // Retrieve the value for each key
-        // $userDatas = json_decode($value, true);
-        // print_r($userDatas);
-        if($key === $usertoken){
-            echo json_encode([
-                'success' => true,
-                'message' => 'Session Valid',
-            ]);
-            exit();
-        }
-    }
-    
-
-
+if ($user_data) {
+    echo json_encode([
+        'success' => true,
+        'message' => 'Session Valid',
+    ]);
+} else {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid or expired session',
+    ]);
+}
 ?>

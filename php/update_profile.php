@@ -26,7 +26,7 @@ if (!$user_data) {
 
 $user = json_decode($user_data, true);
 $user_email = $user['email'];
-$user_name = $user['username'];
+$user_name = $user['name'];
 
 $age = trim($data['age'] ?? '');
 $dob = trim($data['dob'] ?? '');
