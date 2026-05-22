@@ -1,17 +1,11 @@
 <?php
-require_once __DIR__ . '/../../vendor/autoload.php';
-
 class Redis_Connection {
     private $redis;
 
     public function __construct() {
         try {
-            $this->redis = new Predis\Client([
-                'scheme' => 'tcp',
-                'host'   => '127.0.0.1',
-                'port'   => 6379,
-            ]);
-            $this->redis->ping();
+            $this->redis = new Redis();
+            $this->redis->connect('127.0.0.1', 6379);
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,

@@ -1,16 +1,14 @@
 <?php
-require_once __DIR__ . '/../../vendor/autoload.php';
-
 class MongoDB_Connection {
     private $client;
     private $database;
     private $collection;
 
-    public function __construct() { 
+    public function __construct() {
         try {
-            $this->client = new MongoDB\Client("mongodb://localhost:27017");
-            $this->database = $this->client->user_profiles;
-            $this->collection = $this->database->profiles;
+            $this->client = new MongoDB\Driver\Manager("mongodb://localhost:27017");
+            $this->database = 'user_profiles';
+            $this->collection = 'profiles';
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,
@@ -18,6 +16,14 @@ class MongoDB_Connection {
             ]);
             exit();
         }
+    }
+
+    public function getManager() {
+        return $this->client;
+    }
+
+    public function getDatabase() {
+        return $this->database;
     }
 
     public function getCollection() {

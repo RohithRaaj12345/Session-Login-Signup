@@ -5,7 +5,6 @@ header('Access-Control-Allow-Origin: *');
 require_once 'config/redis.php';
 require_once 'config/mongodb.php';
 
-// Get token 
 $data = json_decode(file_get_contents("php://input"), true);
 
 if (!$data) {
@@ -15,7 +14,6 @@ if (!$data) {
 
 $usertoken = trim($data['usertoken'] ?? '');
 
-// Verify token in Redis
 $redis_conn = new Redis_Connection();
 $redis = $redis_conn->getClient();
 
@@ -36,12 +34,14 @@ $contact = trim($data['contact'] ?? '');
 $address = trim($data['address'] ?? '');
 $bio = trim($data['bio'] ?? '');
 
-// Update profile in MongoDB
 $mongodb = new MongoDB_Connection();
-$collection = $mongodb->getCollection();
+$manager = $mongodb->getManager();
+$namespace = $mongodb->getDatabase() . '.' . $mongodb->getCollection();
 
 try {
-    $result = $collection->updateOne(
+    $bulk = new MongoDB\Driver\BulkWrite;
+
+    $bulk->update(
         ['user_email' => $user_email],
         ['$set' => [
             'user_name' => $user_name,
@@ -53,9 +53,11 @@ try {
             'bio' => $bio,
             'updated_at' => new MongoDB\BSON\UTCDateTime()
         ]],
-        ['upsert' => true]
+        ['multi' => false, 'upsert' => true]
     );
-    
+
+    $manager->executeBulkWrite($namespace, $bulk);
+
     echo json_encode([
         'success' => true,
         'message' => 'Profile updated successfully'
