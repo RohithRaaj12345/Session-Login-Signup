@@ -47,6 +47,7 @@ $(document).ready(function() {
                     $('#displayUsername').text(response.username);
                     $('#username').text(response.username);
                     $('#email').text(response.email);
+                    $('#avatarInitial').text(response.username.charAt(0).toUpperCase());
                     
                     // Fill profile form
                     $('#age').val(response.profile.age);
